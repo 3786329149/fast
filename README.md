@@ -57,6 +57,10 @@ app/
 └── main.py             # FastAPI 入口
 ```
 
+补充文档：
+
+- `docs/uv-usage.md`：`uv` 依赖管理与常用命令说明
+
 ---
 
 ## 三、快速启动
@@ -68,28 +72,28 @@ cp .env.example .env
 
 ### 2. 安装依赖
 ```bash
-pip install -e .[dev]
+uv sync
 ```
 
 ### 3. 初始化数据库
 ```bash
-alembic upgrade head
+uv run python -m app.cli migrate
 ```
 
 ### 4. 导入演示数据
 ```bash
-python scripts/seed_demo.py
+uv run python -m app.cli seed-demo
 ```
 
 也可以一键执行：
 
 ```bash
-python scripts/init_demo.py
+uv run python -m app.cli init-demo
 ```
 
 ### 5. 本地启动 API
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run python -m app.cli dev
 ```
 
 ### 6. 访问文档

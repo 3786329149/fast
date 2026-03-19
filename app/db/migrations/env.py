@@ -4,26 +4,16 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
-from sqlalchemy.engine import make_url
 
 from app.core.config import get_settings
 from app.db.base import Base
 
 config = context.config
 settings = get_settings()
-
-
-def to_sync_url(url: str) -> str:
-    parsed = make_url(url)
-    if '+' in parsed.drivername:
-        parsed = parsed.set(drivername=parsed.drivername.split('+', 1)[0])
-    return str(parsed)
-
-
-config.set_main_option('sqlalchemy.url', to_sync_url(settings.DATABASE_URL))
+config.set_main_option('sqlalchemy.url', settings.DATABASE_SYNC_URL)
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    fileConfig(config.config_file_name, encoding='utf-8')
 
 target_metadata = Base.metadata
 

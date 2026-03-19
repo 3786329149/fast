@@ -3,11 +3,13 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+pytest-cache-files-*/
 .mypy_cache/
 .coverage
 htmlcov/
 .env
 .venv/
+.uv-cache/
 .idea/
 .claude/
 .obsidian/

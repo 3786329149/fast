@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import AsyncIterator
 
 from sqlalchemy import DateTime, MetaData, func, text

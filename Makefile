@@ -1,26 +1,23 @@
-PYTHON ?= python
-
 install:
-	$(PYTHON) -m pip install -e .[dev]
+	uv sync
 
 dev:
-	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	uv run python -m app.cli dev
 
 worker:
-	celery -A app.tasks.celery_app.celery_app worker --loglevel=INFO
+	uv run python -m app.cli worker
 
 lint:
-	ruff check app
+	uv run python -m app.cli lint
 
 format:
-	black app
-	isort app
+	uv run python -m app.cli format
 
 test:
-	pytest -q
+	uv run python -m app.cli test
 
 migrate:
-	alembic upgrade head
+	uv run python -m app.cli migrate
 
 revision:
-	alembic revision --autogenerate -m "init"
+	uv run python -m app.cli revision

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 set -e
-alembic upgrade head
+uv run python -m app.cli migrate
