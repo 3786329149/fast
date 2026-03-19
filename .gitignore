@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.env
+.venv/
+.idea/
+.claude/
+.obsidian/
+.vscode/
+.DS_Store
+*.log
+*.egg-info/
