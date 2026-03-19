@@ -13,6 +13,12 @@ async def init_redis() -> None:
     redis_client = Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 
+async def ping_redis() -> bool:
+    if redis_client is None:
+        raise RuntimeError("Redis client is not initialized")
+    return bool(await redis_client.ping())
+
+
 async def close_redis() -> None:
     global redis_client
     if redis_client is not None:

@@ -2,22 +2,22 @@ install:
 	uv sync
 
 dev:
-	uv run python -m app.cli dev
+	uv run fast dev
 
 worker:
-	uv run python -m app.cli worker
+	uv run fast worker
 
 lint:
-	uv run python -m app.cli lint
+	uv run fast lint
 
 format:
-	uv run python -m app.cli format
+	uv run fast format
 
 test:
-	uv run python -m app.cli test
+	uv run fast test
 
 migrate:
-	uv run python -m app.cli migrate
+	uv run fast db migrate
 
 revision:
-	uv run python -m app.cli revision
+	uv run fast db revision

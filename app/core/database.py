@@ -41,7 +41,12 @@ class IDMixin:
 
 def build_engine() -> AsyncEngine:
     settings = get_settings()
-    return create_async_engine(settings.DATABASE_URL, echo=settings.APP_DEBUG, future=True,pool_pre_ping=True,)
+    return create_async_engine(
+        settings.DATABASE_URL,
+        echo=settings.SQL_ECHO,
+        future=True,
+        pool_pre_ping=True,
+    )
 
 
 engine: AsyncEngine = build_engine()

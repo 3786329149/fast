@@ -1,88 +1,135 @@
 from __future__ import annotations
 
-import argparse
+import asyncio
 import subprocess
 import sys
 from pathlib import Path
 
+import typer
+
+from app.bootstrap.diagnostics import run_startup_diagnostics
+from app.bootstrap.logging import configure_logging
+from app.core.config import get_settings
+from app.main import create_app
+
 
 ROOT = Path(__file__).resolve().parents[1]
+DEV_HOST = "0.0.0.0"
+DEV_PORT = 5100
+
+app = typer.Typer(
+    help="Project development commands",
+    no_args_is_help=True,
+    pretty_exceptions_enable=False,
+)
+db_app = typer.Typer(help="Database commands", no_args_is_help=True)
+demo_app = typer.Typer(help="Demo data commands", no_args_is_help=True)
+app.add_typer(db_app, name="db")
+app.add_typer(demo_app, name="demo")
 
 
 def _run(cmd: list[str]) -> None:
     print(f"$ {' '.join(cmd)}")
-    subprocess.run(cmd, cwd=ROOT, check=True)
+    try:
+        subprocess.run(cmd, cwd=ROOT, check=True)
+    except KeyboardInterrupt as exc:
+        print("\nInterrupted.")
+        raise SystemExit(130) from exc
 
 
+def _print_dev_banner() -> None:
+    settings = get_settings()
+    base_url = f"http://127.0.0.1:{DEV_PORT}"
+    print(f"App: {settings.APP_NAME}")
+    print(f"Env: {settings.APP_ENV}")
+    print(f"Bind: {DEV_HOST}:{DEV_PORT}")
+    print(f"Docs: {base_url}/docs")
+    print(f"ReDoc: {base_url}/redoc")
+    print(f"Health: {base_url}/healthz")
+    print(f"Ready: {base_url}/readyz")
+
+
+@app.command()
 def dev() -> None:
-    _run([sys.executable, "-m", "uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "5100"])
+    _print_dev_banner()
+    _run(
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "app.main:app",
+            "--reload",
+            "--host",
+            DEV_HOST,
+            "--port",
+            str(DEV_PORT),
+            "--no-access-log",
+        ]
+    )
 
 
+@app.command()
 def worker() -> None:
     _run([sys.executable, "-m", "celery", "-A", "app.tasks.celery_app.celery_app", "worker", "--loglevel=INFO"])
 
 
+@app.command()
 def lint() -> None:
     _run([sys.executable, "-m", "ruff", "check", "app"])
 
 
+@app.command("format")
 def format_code() -> None:
     _run([sys.executable, "-m", "black", "app"])
     _run([sys.executable, "-m", "isort", "app"])
 
 
-def test() -> None:
+@app.command("test")
+def test_command() -> None:
     _run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests", "app/tests"])
 
 
+@db_app.command("migrate")
 def migrate() -> None:
     _run([sys.executable, "-m", "alembic", "upgrade", "head"])
 
 
+@db_app.command("revision")
 def revision() -> None:
     _run([sys.executable, "-m", "alembic", "revision", "--autogenerate", "-m", "init"])
 
 
+@demo_app.command("seed")
 def seed_demo() -> None:
     _run([sys.executable, "scripts/seed_demo.py"])
 
 
+@demo_app.command("init")
 def init_demo() -> None:
     migrate()
     seed_demo()
     print("Init completed.")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Project development commands")
-    parser.add_argument(
-        "command",
-        choices=[
-            "dev",
-            "worker",
-            "lint",
-            "format",
-            "test",
-            "migrate",
-            "revision",
-            "seed-demo",
-            "init-demo",
-        ],
-    )
-    args = parser.parse_args()
+@app.command()
+def doctor() -> None:
+    configure_logging()
+    fastapi_app = create_app()
+    try:
+        diagnostics = asyncio.run(run_startup_diagnostics(fastapi_app, keep_redis_client=False))
+    except Exception as exc:
+        print(f"Doctor failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
 
-    handlers = {
-        "dev": dev,
-        "worker": worker,
-        "lint": lint,
-        "format": format_code,
-        "test": test,
-        "migrate": migrate,
-        "revision": revision,
-        "seed-demo": seed_demo,
-        "init-demo": init_demo,
-    }
-    handlers[args.command]()
+    print("Doctor completed.")
+    print(f"Database: ok ({diagnostics['database']['latency_ms']} ms)")
+    print(f"Redis: ok ({diagnostics['redis']['latency_ms']} ms)")
+    print(f"Tables: {diagnostics['tables']['count']}")
+    print(f"Routes: {diagnostics['routes']['count']}")
+
+
+def main() -> None:
+    app()
 
 
 if __name__ == "__main__":

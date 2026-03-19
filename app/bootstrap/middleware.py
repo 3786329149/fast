@@ -3,19 +3,53 @@ from __future__ import annotations
 import time
 import uuid
 
+import structlog
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
+
+logger = structlog.get_logger("app.http")
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):  # type: ignore[override]
         request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
         request.state.request_id = request_id
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=request_id)
         start = time.perf_counter()
-        response = await call_next(request)
+        client_ip = request.client.host if request.client is not None else None
+
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            logger.exception(
+                "request_failed",
+                request_id=request_id,
+                method=request.method,
+                path=request.url.path,
+                duration_ms=duration_ms,
+                client_ip=client_ip,
+            )
+            raise
+        finally:
+            structlog.contextvars.unbind_contextvars("request_id")
+
         duration = time.perf_counter() - start
         response.headers['X-Request-ID'] = request_id
         response.headers['X-Process-Time'] = f'{duration:.6f}'
+        duration_ms = round(duration * 1000, 2)
+        log = logger.error if response.status_code >= 500 else logger.info
+        event = "request_failed" if response.status_code >= 500 else "request_completed"
+        log(
+            event,
+            request_id=request_id,
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_ms=duration_ms,
+            client_ip=client_ip,
+        )
         return response
 
 

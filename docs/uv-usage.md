@@ -57,44 +57,45 @@ uv sync --frozen
 
 本项目已补充一组项目脚本命令，推荐优先使用：
 
-- `uv run python -m app.cli dev`
-- `uv run python -m app.cli worker`
-- `uv run python -m app.cli lint`
-- `uv run python -m app.cli format`
-- `uv run python -m app.cli test`
-- `uv run python -m app.cli migrate`
-- `uv run python -m app.cli revision`
-- `uv run python -m app.cli seed-demo`
-- `uv run python -m app.cli init-demo`
+- `uv run fast dev`
+- `uv run fast worker`
+- `uv run fast doctor`
+- `uv run fast lint`
+- `uv run fast format`
+- `uv run fast test`
+- `uv run fast db migrate`
+- `uv run fast db revision`
+- `uv run fast demo seed`
+- `uv run fast demo init`
 
 ### 启动 API
 
 ```bash
-uv run python -m app.cli dev
+uv run fast dev
 ```
 
 ### 执行数据库迁移
 
 ```bash
-uv run python -m app.cli migrate
+uv run fast db migrate
 ```
 
 ### 导入演示数据
 
 ```bash
-uv run python -m app.cli seed-demo
+uv run fast demo seed
 ```
 
 ### 一键初始化数据库和演示数据
 
 ```bash
-uv run python -m app.cli init-demo
+uv run fast demo init
 ```
 
 ### 运行测试
 
 ```bash
-uv run python -m app.cli test
+uv run fast test
 ```
 
 该命令会显式运行 `tests` 与 `app/tests`，并关闭 `pytest` 缓存插件，避免 Windows 下临时缓存目录干扰测试收集。
@@ -102,19 +103,25 @@ uv run python -m app.cli test
 ### 运行代码检查
 
 ```bash
-uv run python -m app.cli lint
+uv run fast lint
 ```
 
 ### 格式化代码
 
 ```bash
-uv run python -m app.cli format
+uv run fast format
 ```
 
 ### 启动 Celery Worker
 
 ```bash
-uv run python -m app.cli worker
+uv run fast worker
+```
+
+### 运行环境体检
+
+```bash
+uv run fast doctor
 ```
 
 ## 5. 增删依赖
@@ -180,18 +187,18 @@ uv sync --frozen
 
 ```bash
 uv sync
-uv run python -m app.cli migrate
-uv run python -m app.cli init-demo
-uv run python -m app.cli dev
+uv run fast db migrate
+uv run fast demo init
+uv run fast dev
 ```
 
 如果已经初始化过数据库，则常用命令通常是：
 
 ```bash
 uv sync --frozen
-uv run python -m app.cli dev
+uv run fast dev
 ```
 
 ## 9. 当前项目里和 uv 相关的注意点
 
-当前仓库已统一补充项目级 `uv run python -m app.cli ...` 命令，后续新增常用脚本时，也建议继续放到同一套入口里维护。
+当前仓库已统一补充项目级 `uv run fast ...` 命令，后续新增常用脚本时，也建议继续放到同一套入口里维护。

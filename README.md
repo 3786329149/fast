@@ -77,28 +77,28 @@ uv sync
 
 ### 3. 初始化数据库
 ```bash
-uv run python -m app.cli migrate
+uv run fast db migrate
 ```
 
 ### 4. 导入演示数据
 ```bash
-uv run python -m app.cli seed-demo
+uv run fast demo seed
 ```
 
 也可以一键执行：
 
 ```bash
-uv run python -m app.cli init-demo
+uv run fast demo init
 ```
 
 ### 5. 本地启动 API
 ```bash
-uv run python -m app.cli dev
+uv run fast dev
 ```
 
 ### 6. 访问文档
-- Swagger UI: `http://127.0.0.1:8000/docs`
-- ReDoc: `http://127.0.0.1:8000/redoc`
+- Swagger UI: `http://127.0.0.1:5100/docs`
+- ReDoc: `http://127.0.0.1:5100/redoc`
 
 ### 7. Docker 启动
 ```bash

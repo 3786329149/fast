@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,6 +14,9 @@ class Settings(BaseSettings):
     APP_SECRET_KEY: str = "change-this-secret-key"
     APP_TIMEZONE: str = "Asia/Shanghai"
     APP_API_PREFIX: str = "/api"
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: Literal["pretty", "json"] | None = None
+    SQL_ECHO: bool = False
 
     DATABASE_URL_OVERRIDE: str | None = None
     POSTGRES_HOST: str = "127.0.0.1"
@@ -83,6 +87,16 @@ class Settings(BaseSettings):
             return self.REDIS_URL_OVERRIDE
         auth = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
         return f"redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+    @property
+    def IS_LOCAL_ENV(self) -> bool:
+        return self.APP_ENV.lower() in {"local", "dev", "development"}
+
+    @property
+    def RESOLVED_LOG_FORMAT(self) -> str:
+        if self.LOG_FORMAT is not None:
+            return self.LOG_FORMAT
+        return "pretty" if self.IS_LOCAL_ENV else "json"
 
     @property
     def WECHAT_PAYMENT_ENABLED(self) -> bool:
