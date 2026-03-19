@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from __future__ import annotations
 
-from app.api.deps import get_current_client_user
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_current_client_user, get_db
 from app.core.response import success
 from app.core.security import Principal
 from app.modules.mall.schemas import CartAddRequest, OrderCreateRequest
@@ -10,13 +13,13 @@ router = APIRouter(tags=['Mall Client'])
 
 
 @router.get('/products')
-async def list_products() -> dict:
-    return success(service.list_products())
+async def list_products(session: AsyncSession = Depends(get_db)) -> dict:
+    return success(await service.list_products(session))
 
 
 @router.get('/products/{product_id}')
-async def get_product(product_id: int) -> dict:
-    product = service.get_product(product_id)
+async def get_product(product_id: int, session: AsyncSession = Depends(get_db)) -> dict:
+    product = await service.get_product(session, product_id)
     if product is None:
         raise HTTPException(status_code=404, detail='商品不存在')
     return success(product)
@@ -26,19 +29,24 @@ async def get_product(product_id: int) -> dict:
 async def add_cart_item(
     payload: CartAddRequest,
     current_user: Principal = Depends(get_current_client_user),
+    session: AsyncSession = Depends(get_db),
 ) -> dict:
-    return success(service.add_cart_item(current_user.user_id, payload.sku_id, payload.quantity))
+    return success(await service.add_cart_item(session, current_user.user_id, payload.sku_id, payload.quantity))
 
 
 @router.post('/orders')
 async def create_order(
     payload: OrderCreateRequest,
     current_user: Principal = Depends(get_current_client_user),
+    session: AsyncSession = Depends(get_db),
 ) -> dict:
     items = [item.model_dump() for item in payload.items]
-    return success(service.create_order(current_user.user_id, items, payload.source_type))
+    return success(await service.create_order(session, current_user.user_id, items, payload.source_type))
 
 
 @router.get('/orders')
-async def list_orders(current_user: Principal = Depends(get_current_client_user)) -> dict:
-    return success(service.list_orders(current_user.user_id))
+async def list_orders(
+    current_user: Principal = Depends(get_current_client_user),
+    session: AsyncSession = Depends(get_db),
+) -> dict:
+    return success(await service.list_orders(session, current_user.user_id))

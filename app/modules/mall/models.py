@@ -59,6 +59,9 @@ class MallOrder(IDMixin, TimestampMixin, Base):
     total_amount: Mapped[float] = mapped_column(Numeric(10, 2))
     pay_amount: Mapped[float] = mapped_column(Numeric(10, 2))
     created_by: Mapped[int | None] = mapped_column(nullable=True)
+    receiver_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    receiver_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    items_count: Mapped[int] = mapped_column(default=0)
 
 
 class MallOrderItem(IDMixin, TimestampMixin, Base):

@@ -13,6 +13,7 @@ class AdminRole(IDMixin, TimestampMixin, Base):
     code: Mapped[str] = mapped_column(String(64), unique=True)
     data_scope: Mapped[str] = mapped_column(String(32), default='SELF')
     status: Mapped[int] = mapped_column(default=1)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class AdminMenu(IDMixin, TimestampMixin, Base):
@@ -26,6 +27,8 @@ class AdminMenu(IDMixin, TimestampMixin, Base):
     icon: Mapped[str | None] = mapped_column(String(64), nullable=True)
     permission_code: Mapped[str | None] = mapped_column(String(128), nullable=True)
     sort: Mapped[int] = mapped_column(default=0)
+    status: Mapped[int] = mapped_column(default=1)
+    remark: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class AdminPermission(IDMixin, TimestampMixin, Base):

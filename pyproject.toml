@@ -25,6 +25,7 @@ dependencies = [
   "celery[redis]>=5.4,<6.0",
   "structlog>=24.1,<25.0",
   "psycopg2-binary>=2.9.11",
+  "celery-types>=0.26.0",
 ]
 
 [project.optional-dependencies]
