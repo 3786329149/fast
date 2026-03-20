@@ -3,10 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppException
 from app.core.security import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.file.models import FileAsset
@@ -65,7 +65,7 @@ class FileService:
                            current_user: Principal) -> dict:
         item = await session.get(FileAsset, asset_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='文件不存在')
+            raise AppException('文件不存在', status_code=404)
         item.storage_provider = payload.storage_provider
         item.bucket = normalize_text(payload.bucket)
         item.object_key = payload.object_key.strip()
@@ -83,7 +83,7 @@ class FileService:
     async def delete_asset(self, session: AsyncSession, asset_id: int, current_user: Principal) -> dict:
         item = await session.get(FileAsset, asset_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='文件不存在')
+            raise AppException('文件不存在', status_code=404)
         name = item.file_name
         await session.delete(item)
         await audit_service.log_operation(session, module='file', action='delete_asset',

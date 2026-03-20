@@ -5,12 +5,13 @@ import time
 from dataclasses import dataclass
 from uuid import uuid4
 
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.constants import QR_LOGIN_TICKET_EXPIRE_SECONDS
 from app.core.enums import TokenScene
+from app.core.exceptions import AppException
 from app.core import redis as redis_store
 from app.core.security import Principal, decode_token, get_password_hash, issue_token_pair, verify_password
 from app.integrations.wechat.client import WeChatApiError, client as wechat_client
@@ -134,7 +135,7 @@ class IAMService:
     async def admin_login(self, session: AsyncSession, account: str, password: str) -> LoginResult:
         user = await repository.get_user_for_account(session, account)
         if user is None or not user.is_admin:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='账号或密码错误')
+            raise AppException('账号或密码错误', status_code=status.HTTP_401_UNAUTHORIZED)
 
         password_identity = await repository.get_identity(
             session,
@@ -149,9 +150,9 @@ class IAMService:
             )
 
         if password_identity is None or not password_identity.credential_hash:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='账号或密码错误')
+            raise AppException('账号或密码错误', status_code=status.HTTP_401_UNAUTHORIZED)
         if not verify_password(password, password_identity.credential_hash):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='账号或密码错误')
+            raise AppException('账号或密码错误', status_code=status.HTTP_401_UNAUTHORIZED)
 
         principal = self._build_principal(user_id=user.id, username=user.username, scene=TokenScene.ADMIN, is_admin=True)
         result = self._issue_result(principal)
@@ -168,11 +169,11 @@ class IAMService:
         try:
             payload = decode_token(refresh_token)
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='刷新令牌无效') from exc
+            raise AppException('刷新令牌无效', status_code=status.HTTP_401_UNAUTHORIZED) from exc
         if payload.token_type != 'refresh':
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='刷新令牌无效')
+            raise AppException('刷新令牌无效', status_code=status.HTTP_401_UNAUTHORIZED)
         if payload.scene != expected_scene:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='令牌场景不匹配')
+            raise AppException('令牌场景不匹配', status_code=status.HTTP_403_FORBIDDEN)
         principal = Principal(
             user_id=int(payload.sub),
             username=payload.username,
@@ -237,10 +238,10 @@ class IAMService:
             )
 
         if user is None or password_identity is None or not password_identity.credential_hash:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='账号或密码错误')
+            raise AppException('账号或密码错误', status_code=status.HTTP_401_UNAUTHORIZED)
 
         if not verify_password(password, password_identity.credential_hash):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='账号或密码错误')
+            raise AppException('账号或密码错误', status_code=status.HTTP_401_UNAUTHORIZED)
 
         principal = self._build_principal(user_id=user.id, username=user.username, scene=TokenScene.CLIENT)
         result = self._issue_result(principal)
@@ -257,11 +258,11 @@ class IAMService:
         try:
             data = await wechat_client.code_to_session(code)
         except WeChatApiError as exc:
-            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+            raise AppException(str(exc), status_code=status.HTTP_502_BAD_GATEWAY) from exc
 
         identity_key = data.get('unionid') or data.get('openid')
         if not identity_key:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='微信登录返回缺少 openid/unionid')
+            raise AppException('微信登录返回缺少 openid/unionid', status_code=status.HTTP_400_BAD_REQUEST)
 
         identity = await repository.get_identity(
             session,
@@ -271,7 +272,7 @@ class IAMService:
         if identity is not None:
             user = await repository.get_user_by_id(session, identity.user_id)
             if user is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='用户不存在')
+                raise AppException('用户不存在', status_code=status.HTTP_404_NOT_FOUND)
             result = self._issue_result(
                 self._build_principal(user_id=user.id, username=user.username, scene=TokenScene.CLIENT)
             )
@@ -321,20 +322,20 @@ class IAMService:
         if union_token:
             pending = await self._get_cache('pending_bind', union_token)
             if pending is None:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='微信绑定票据已失效，请重新登录')
+                raise AppException('微信绑定票据已失效，请重新登录', status_code=status.HTTP_400_BAD_REQUEST)
 
         if phone_code:
             try:
                 phone_resp = await wechat_client.get_user_phone_number(phone_code)
             except WeChatApiError as exc:
-                raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+                raise AppException(str(exc), status_code=status.HTTP_502_BAD_GATEWAY) from exc
             phone_info = phone_resp.get('phone_info') or {}
             phone = phone_info.get('purePhoneNumber') or phone_info.get('phoneNumber')
             if not phone:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='微信手机号换取失败')
+                raise AppException('微信手机号换取失败', status_code=status.HTTP_400_BAD_REQUEST)
         else:
             if not phone or not code:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='缺少手机号绑定参数')
+                raise AppException('缺少手机号绑定参数', status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
             self._ensure_sms_code(code)
 
         user = await repository.get_user_by_mobile(session, phone)
@@ -379,7 +380,7 @@ class IAMService:
     async def bind_wechat(self, session: AsyncSession, *, current_user: Principal, union_token: str | None, openid: str | None) -> dict:
         pending = await self._get_cache('pending_bind', union_token) if union_token else None
         if pending is None and not openid:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='缺少可绑定的微信凭证')
+            raise AppException('缺少可绑定的微信凭证', status_code=status.HTTP_400_BAD_REQUEST)
 
         identity_key = (pending or {}).get('unionid') or openid or (pending or {}).get('openid')
         await repository.upsert_identity(
@@ -421,7 +422,7 @@ class IAMService:
     async def scan_qr_ticket(self, ticket: str, *, user_id: int) -> dict:
         data = await self._get_cache('qr', ticket)
         if data is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='扫码票据不存在或已过期')
+            raise AppException('扫码票据不存在或已过期', status_code=status.HTTP_404_NOT_FOUND)
         data['status'] = 'scanned'
         data['scanned_by'] = user_id
         await self._set_cache('qr', ticket, data, QR_LOGIN_TICKET_EXPIRE_SECONDS)
@@ -430,9 +431,9 @@ class IAMService:
     async def confirm_qr_ticket(self, ticket: str, *, user_id: int) -> dict:
         data = await self._get_cache('qr', ticket)
         if data is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='扫码票据不存在或已过期')
+            raise AppException('扫码票据不存在或已过期', status_code=status.HTTP_404_NOT_FOUND)
         if data.get('scanned_by') not in (None, user_id):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='当前用户不能确认此扫码登录')
+            raise AppException('当前用户不能确认此扫码登录', status_code=status.HTTP_403_FORBIDDEN)
         data['status'] = 'confirmed'
         data['confirmed_by'] = user_id
         principal = self._build_principal(user_id=user_id, username=f'user_{user_id}', scene=TokenScene.CLIENT)
@@ -445,7 +446,7 @@ class IAMService:
     @staticmethod
     def _ensure_sms_code(code: str) -> None:
         if len(code) < 4:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='验证码格式错误')
+            raise AppException('验证码格式错误', status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 service = IAMService()

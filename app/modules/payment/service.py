@@ -5,11 +5,12 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from uuid import uuid4
 
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.exceptions import AppException
 from app.core.security import Principal
 from app.integrations.wechat.client import WeChatApiError, client as wechat_client
 from app.modules.iam.repository import repository as iam_repository
@@ -29,7 +30,7 @@ class PaymentService:
         openid: str | None = None,
     ) -> dict:
         if channel != 'wechat_miniapp':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='当前 Starter 仅内置了微信小程序支付骨架')
+            raise AppException('当前 Starter 仅内置了微信小程序支付骨架', status_code=status.HTTP_400_BAD_REQUEST)
         return await self.create_wechat_payment(
             session,
             current_user=current_user,
@@ -51,17 +52,17 @@ class PaymentService:
             select(MallOrder).where(MallOrder.order_no == order_no, MallOrder.user_id == current_user.user_id)
         )
         if mall_order is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='订单不存在')
+            raise AppException('订单不存在', status_code=status.HTTP_404_NOT_FOUND)
         if mall_order.pay_status == 'paid':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='订单已支付，无需重复下单')
+            raise AppException('订单已支付，无需重复下单', status_code=status.HTTP_400_BAD_REQUEST)
 
         payer_openid = openid or await self._resolve_user_openid(session, current_user.user_id)
         if not payer_openid:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='当前账号未绑定微信小程序账号，无法发起微信支付')
+            raise AppException('当前账号未绑定微信小程序账号，无法发起微信支付', status_code=status.HTTP_400_BAD_REQUEST)
 
         amount = Decimal(str(mall_order.pay_amount)).quantize(Decimal('0.01'))
         if amount <= 0:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='订单支付金额无效')
+            raise AppException('订单支付金额无效', status_code=status.HTTP_400_BAD_REQUEST)
 
         latest_order = await repository.get_latest_payment_by_biz_order_no(
             session,
@@ -106,7 +107,7 @@ class PaymentService:
             payment_order.status = 'failed'
             payment_order.channel_response = json.dumps({'error': str(exc)}, ensure_ascii=False)
             await session.commit()
-            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+            raise AppException(str(exc), status_code=status.HTTP_502_BAD_GATEWAY) from exc
 
         await repository.update_payment_prepare(
             session,
@@ -133,16 +134,16 @@ class PaymentService:
         try:
             parsed = wechat_client.parse_payment_callback(headers=headers, body=body)
         except (WeChatApiError, ValueError) as exc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'回调处理失败: {exc}') from exc
+            raise AppException(f'回调处理失败: {exc}', status_code=status.HTTP_400_BAD_REQUEST) from exc
 
         resource = parsed.resource
         pay_order_no = resource.get('out_trade_no')
         if not pay_order_no:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='回调数据缺少 out_trade_no')
+            raise AppException('回调数据缺少 out_trade_no', status_code=status.HTTP_400_BAD_REQUEST)
 
         payment_order = await repository.get_payment_by_pay_order_no(session, pay_order_no)
         if payment_order is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='支付单不存在')
+            raise AppException('支付单不存在', status_code=status.HTTP_404_NOT_FOUND)
 
         trade_state = str(resource.get('trade_state', '')).upper()
         if trade_state == 'SUCCESS':

@@ -3,10 +3,10 @@ from __future__ import annotations
 from decimal import Decimal
 from uuid import uuid4
 
-from fastapi import HTTPException
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppException
 from app.core.security import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.mall.models import MallCart, MallCategory, MallOrder, MallOrderItem, MallSku, MallSpu
@@ -112,7 +112,7 @@ class MallService:
     ) -> dict:
         spu = await session.get(MallSpu, product_id)
         if spu is None:
-            raise HTTPException(status_code=404, detail='商品不存在')
+            raise AppException('商品不存在', status_code=404)
         category = await self._get_or_create_category(session, payload.category)
         sku = await self._get_primary_sku(session, spu.id)
         if sku is None:
@@ -148,12 +148,12 @@ class MallService:
     async def delete_product(self, session: AsyncSession, product_id: int, current_user: Principal) -> dict:
         spu = await session.get(MallSpu, product_id)
         if spu is None:
-            raise HTTPException(status_code=404, detail='商品不存在')
+            raise AppException('商品不存在', status_code=404)
         sku_ids = list((await session.scalars(select(MallSku.id).where(MallSku.spu_id == product_id))).all())
         if sku_ids:
             used = await session.scalar(select(MallOrderItem.id).where(MallOrderItem.sku_id.in_(sku_ids)).limit(1))
             if used is not None:
-                raise HTTPException(status_code=400, detail='商品已产生订单，不能删除')
+                raise AppException('商品已产生订单，不能删除', status_code=400)
             await session.execute(delete(MallSku).where(MallSku.spu_id == product_id))
         name = spu.name
         await session.delete(spu)
@@ -171,7 +171,7 @@ class MallService:
     async def add_cart_item(self, session: AsyncSession, user_id: int, sku_id: int, quantity: int) -> dict:
         sku = await session.get(MallSku, sku_id)
         if sku is None:
-            raise HTTPException(status_code=404, detail='SKU 不存在')
+            raise AppException('SKU 不存在', status_code=404)
         cart = await session.scalar(select(MallCart).where(MallCart.user_id == user_id, MallCart.sku_id == sku_id))
         if cart is None:
             cart = MallCart(user_id=user_id, sku_id=sku_id, quantity=quantity, checked=True)
@@ -183,7 +183,7 @@ class MallService:
 
     async def create_order(self, session: AsyncSession, user_id: int, items: list[dict], source_type: str) -> dict:
         if not items:
-            raise HTTPException(status_code=400, detail='订单项不能为空')
+            raise AppException('订单项不能为空', status_code=400)
         sku_ids = [int(item.get('sku_id')) for item in items]
         skus = list((await session.scalars(select(MallSku).where(MallSku.id.in_(sku_ids)))).all())
         sku_map = {sku.id: sku for sku in skus}
@@ -191,7 +191,7 @@ class MallService:
         for item in items:
             sku = sku_map.get(int(item.get('sku_id')))
             if sku is None:
-                raise HTTPException(status_code=404, detail='存在无效的 SKU')
+                raise AppException('存在无效的 SKU', status_code=404)
             qty = int(item.get('quantity', 1) or 1)
             total += Decimal(str(sku.sale_price)) * qty
         order = MallOrder(
@@ -260,7 +260,7 @@ class MallService:
     async def create_admin_order(self, session: AsyncSession, payload: OrderAdminCreate, current_user: Principal) -> dict:
         exists = await session.scalar(select(MallOrder).where(MallOrder.order_no == payload.order_no.strip()))
         if exists is not None:
-            raise HTTPException(status_code=400, detail='订单号已存在')
+            raise AppException('订单号已存在', status_code=400)
         order = MallOrder(
             order_no=payload.order_no.strip(),
             user_id=payload.user_id,
@@ -298,10 +298,10 @@ class MallService:
     ) -> dict:
         order = await session.get(MallOrder, order_id)
         if order is None:
-            raise HTTPException(status_code=404, detail='订单不存在')
+            raise AppException('订单不存在', status_code=404)
         exists = await session.scalar(select(MallOrder).where(MallOrder.order_no == payload.order_no.strip(), MallOrder.id != order_id))
         if exists is not None:
-            raise HTTPException(status_code=400, detail='订单号已存在')
+            raise AppException('订单号已存在', status_code=400)
         order.order_no = payload.order_no.strip()
         order.user_id = payload.user_id
         order.status = payload.status
@@ -326,9 +326,9 @@ class MallService:
     async def delete_admin_order(self, session: AsyncSession, order_id: int, current_user: Principal) -> dict:
         order = await session.get(MallOrder, order_id)
         if order is None:
-            raise HTTPException(status_code=404, detail='订单不存在')
+            raise AppException('订单不存在', status_code=404)
         if order.pay_status == 'paid':
-            raise HTTPException(status_code=400, detail='已支付订单不支持直接删除')
+            raise AppException('已支付订单不支持直接删除', status_code=400)
         await session.execute(delete(MallOrderItem).where(MallOrderItem.order_id == order_id))
         order_no = order.order_no
         await session.delete(order)

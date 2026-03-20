@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppException
 from app.core.security import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.org.models import EmployeeProfile, OrgCompany, OrgDepartment
@@ -27,7 +28,7 @@ class OrgService:
             return '/'
         parent = await session.get(OrgDepartment, parent_id)
         if parent is None:
-            raise HTTPException(status_code=404, detail='上级部门不存在')
+            raise AppException('上级部门不存在', status_code=404)
         return f"{parent.tree_path}{parent.id}/"
 
     async def list_departments(self, session: AsyncSession) -> list[dict]:
@@ -86,9 +87,9 @@ class OrgService:
     ) -> dict:
         department = await session.get(OrgDepartment, department_id)
         if department is None:
-            raise HTTPException(status_code=404, detail='部门不存在')
+            raise AppException('部门不存在', status_code=404)
         if payload.parent_id == department.id:
-            raise HTTPException(status_code=400, detail='上级部门不能是自己')
+            raise AppException('上级部门不能是自己', status_code=400)
         department.parent_id = payload.parent_id
         department.name = payload.name.strip()
         department.code = normalize_text(payload.code)
@@ -112,13 +113,13 @@ class OrgService:
     async def delete_department(self, session: AsyncSession, department_id: int, current_user: Principal) -> dict:
         department = await session.get(OrgDepartment, department_id)
         if department is None:
-            raise HTTPException(status_code=404, detail='部门不存在')
+            raise AppException('部门不存在', status_code=404)
         child = await session.scalar(select(OrgDepartment).where(OrgDepartment.parent_id == department_id))
         if child is not None:
-            raise HTTPException(status_code=400, detail='请先删除子部门')
+            raise AppException('请先删除子部门', status_code=400)
         employee = await session.scalar(select(EmployeeProfile).where(EmployeeProfile.dept_id == department_id))
         if employee is not None:
-            raise HTTPException(status_code=400, detail='请先迁移该部门下员工')
+            raise AppException('请先迁移该部门下员工', status_code=400)
         name = department.name
         await session.delete(department)
         await audit_service.log_operation(
@@ -159,7 +160,7 @@ class OrgService:
     async def create_employee(self, session: AsyncSession, payload: EmployeeCreate, current_user: Principal) -> dict:
         dept = await session.get(OrgDepartment, payload.dept_id)
         if dept is None:
-            raise HTTPException(status_code=404, detail='部门不存在')
+            raise AppException('部门不存在', status_code=404)
         employee = EmployeeProfile(
             user_id=payload.user_id,
             org_id=dept.org_id,
@@ -198,10 +199,10 @@ class OrgService:
     ) -> dict:
         employee = await session.get(EmployeeProfile, employee_id)
         if employee is None:
-            raise HTTPException(status_code=404, detail='员工不存在')
+            raise AppException('员工不存在', status_code=404)
         dept = await session.get(OrgDepartment, payload.dept_id)
         if dept is None:
-            raise HTTPException(status_code=404, detail='部门不存在')
+            raise AppException('部门不存在', status_code=404)
         if employee.dept_id != payload.dept_id:
             old_dept = await session.get(OrgDepartment, employee.dept_id)
             if old_dept and old_dept.member_count is not None and old_dept.member_count > 0:
@@ -233,7 +234,7 @@ class OrgService:
     async def delete_employee(self, session: AsyncSession, employee_id: int, current_user: Principal) -> dict:
         employee = await session.get(EmployeeProfile, employee_id)
         if employee is None:
-            raise HTTPException(status_code=404, detail='员工不存在')
+            raise AppException('员工不存在', status_code=404)
         dept = await session.get(OrgDepartment, employee.dept_id)
         if dept and dept.member_count is not None and dept.member_count > 0:
             dept.member_count -= 1

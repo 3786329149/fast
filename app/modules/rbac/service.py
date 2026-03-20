@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fastapi import HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppException
 from app.core.security import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.rbac.models import (
@@ -60,7 +60,7 @@ class RBACService:
     async def create_role(self, session: AsyncSession, payload: RoleCreate, current_user: Principal) -> dict:
         exists = await session.scalar(select(AdminRole).where(AdminRole.code == payload.code.strip()))
         if exists is not None:
-            raise HTTPException(status_code=400, detail='角色编码已存在')
+            raise AppException('角色编码已存在', status_code=400)
         role = AdminRole(
             name=payload.name.strip(),
             code=payload.code.strip(),
@@ -85,10 +85,10 @@ class RBACService:
     async def update_role(self, session: AsyncSession, role_id: int, payload: RoleUpdate, current_user: Principal) -> dict:
         role = await session.get(AdminRole, role_id)
         if role is None:
-            raise HTTPException(status_code=404, detail='角色不存在')
+            raise AppException('角色不存在', status_code=404)
         exists = await session.scalar(select(AdminRole).where(AdminRole.code == payload.code.strip(), AdminRole.id != role_id))
         if exists is not None:
-            raise HTTPException(status_code=400, detail='角色编码已存在')
+            raise AppException('角色编码已存在', status_code=400)
         role.name = payload.name.strip()
         role.code = payload.code.strip()
         role.data_scope = payload.data_scope
@@ -109,7 +109,7 @@ class RBACService:
     async def delete_role(self, session: AsyncSession, role_id: int, current_user: Principal) -> dict:
         role = await session.get(AdminRole, role_id)
         if role is None:
-            raise HTTPException(status_code=404, detail='角色不存在')
+            raise AppException('角色不存在', status_code=404)
         await session.execute(delete(AdminRolePermission).where(AdminRolePermission.role_id == role_id))
         await session.execute(delete(AdminRoleMenu).where(AdminRoleMenu.role_id == role_id))
         await session.execute(delete(AdminUserRole).where(AdminUserRole.role_id == role_id))
@@ -147,7 +147,7 @@ class RBACService:
 
     async def create_menu(self, session: AsyncSession, payload: MenuCreate, current_user: Principal) -> dict:
         if payload.parent_id is not None and await session.get(AdminMenu, payload.parent_id) is None:
-            raise HTTPException(status_code=404, detail='上级菜单不存在')
+            raise AppException('上级菜单不存在', status_code=404)
         menu = AdminMenu(
             name=payload.name.strip(),
             type=payload.type,
@@ -176,11 +176,11 @@ class RBACService:
     async def update_menu(self, session: AsyncSession, menu_id: int, payload: MenuUpdate, current_user: Principal) -> dict:
         menu = await session.get(AdminMenu, menu_id)
         if menu is None:
-            raise HTTPException(status_code=404, detail='菜单不存在')
+            raise AppException('菜单不存在', status_code=404)
         if payload.parent_id == menu_id:
-            raise HTTPException(status_code=400, detail='上级菜单不能是自己')
+            raise AppException('上级菜单不能是自己', status_code=400)
         if payload.parent_id is not None and await session.get(AdminMenu, payload.parent_id) is None:
-            raise HTTPException(status_code=404, detail='上级菜单不存在')
+            raise AppException('上级菜单不存在', status_code=404)
         menu.name = payload.name.strip()
         menu.type = payload.type
         menu.path = normalize_text(payload.path)
@@ -205,10 +205,10 @@ class RBACService:
     async def delete_menu(self, session: AsyncSession, menu_id: int, current_user: Principal) -> dict:
         menu = await session.get(AdminMenu, menu_id)
         if menu is None:
-            raise HTTPException(status_code=404, detail='菜单不存在')
+            raise AppException('菜单不存在', status_code=404)
         child = await session.scalar(select(AdminMenu).where(AdminMenu.parent_id == menu_id))
         if child is not None:
-            raise HTTPException(status_code=400, detail='请先删除子菜单')
+            raise AppException('请先删除子菜单', status_code=400)
         await session.execute(delete(AdminRoleMenu).where(AdminRoleMenu.menu_id == menu_id))
         name = menu.name
         await session.delete(menu)
@@ -244,7 +244,7 @@ class RBACService:
     ) -> dict:
         exists = await session.scalar(select(AdminPermission).where(AdminPermission.code == payload.code.strip()))
         if exists is not None:
-            raise HTTPException(status_code=400, detail='权限码已存在')
+            raise AppException('权限码已存在', status_code=400)
         permission = AdminPermission(
             code=payload.code.strip(),
             name=payload.name.strip(),
@@ -273,12 +273,12 @@ class RBACService:
     ) -> dict:
         permission = await session.get(AdminPermission, permission_id)
         if permission is None:
-            raise HTTPException(status_code=404, detail='权限点不存在')
+            raise AppException('权限点不存在', status_code=404)
         exists = await session.scalar(
             select(AdminPermission).where(AdminPermission.code == payload.code.strip(), AdminPermission.id != permission_id)
         )
         if exists is not None:
-            raise HTTPException(status_code=400, detail='权限码已存在')
+            raise AppException('权限码已存在', status_code=400)
         permission.code = payload.code.strip()
         permission.name = payload.name.strip()
         permission.group_name = normalize_text(payload.module) or 'general'
@@ -297,7 +297,7 @@ class RBACService:
     async def delete_permission(self, session: AsyncSession, permission_id: int, current_user: Principal) -> dict:
         permission = await session.get(AdminPermission, permission_id)
         if permission is None:
-            raise HTTPException(status_code=404, detail='权限点不存在')
+            raise AppException('权限点不存在', status_code=404)
         await session.execute(delete(AdminRolePermission).where(AdminRolePermission.permission_id == permission_id))
         code = permission.code
         await session.delete(permission)

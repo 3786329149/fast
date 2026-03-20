@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppException
 from app.core.security import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.cms.models import CmsBanner, CmsNotice
@@ -46,7 +46,7 @@ class CMSService:
                             current_user: Principal) -> dict:
         item = await session.get(CmsBanner, banner_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='Banner 不存在')
+            raise AppException('Banner 不存在', status_code=404)
         item.title = payload.title.strip()
         item.image_url = payload.image_url.strip()
         item.link_url = normalize_text(payload.link_url)
@@ -61,7 +61,7 @@ class CMSService:
     async def delete_banner(self, session: AsyncSession, banner_id: int, current_user: Principal) -> dict:
         item = await session.get(CmsBanner, banner_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='Banner 不存在')
+            raise AppException('Banner 不存在', status_code=404)
         title = item.title
         await session.delete(item)
         await audit_service.log_operation(session, module='cms', action='delete_banner',
@@ -100,7 +100,7 @@ class CMSService:
     async def update_notice(self, session: AsyncSession, notice_id: int, payload: NoticeUpdate, current_user: Principal) -> dict:
         item = await session.get(CmsNotice, notice_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='公告不存在')
+            raise AppException('公告不存在', status_code=404)
         item.title = payload.title.strip()
         item.content = payload.content.strip()
         item.status = active_to_int(payload.status)
@@ -112,7 +112,7 @@ class CMSService:
     async def delete_notice(self, session: AsyncSession, notice_id: int, current_user: Principal) -> dict:
         item = await session.get(CmsNotice, notice_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='公告不存在')
+            raise AppException('公告不存在', status_code=404)
         title = item.title
         await session.delete(item)
         await audit_service.log_operation(session, module='cms', action='delete_notice', path=f'/api/admin/v1/cms/notices/{notice_id}', user_id=current_user.user_id, detail=title)

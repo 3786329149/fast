@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppException
 from app.core.security import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.system.models import SystemConfig, SystemDict
@@ -27,7 +27,7 @@ class SystemService:
     async def create_config(self, session: AsyncSession, payload: ConfigCreate, current_user: Principal) -> dict:
         exists = await session.scalar(select(SystemConfig).where(SystemConfig.config_key == payload.key.strip()))
         if exists is not None:
-            raise HTTPException(status_code=400, detail='配置 Key 已存在')
+            raise AppException('配置 Key 已存在', status_code=400)
         item = SystemConfig(config_key=payload.key.strip(), config_value=payload.value, remark=normalize_text(payload.remark))
         session.add(item)
         await session.flush()
@@ -38,10 +38,10 @@ class SystemService:
     async def update_config(self, session: AsyncSession, config_id: int, payload: ConfigUpdate, current_user: Principal) -> dict:
         item = await session.get(SystemConfig, config_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='配置不存在')
+            raise AppException('配置不存在', status_code=404)
         exists = await session.scalar(select(SystemConfig).where(SystemConfig.config_key == payload.key.strip(), SystemConfig.id != config_id))
         if exists is not None:
-            raise HTTPException(status_code=400, detail='配置 Key 已存在')
+            raise AppException('配置 Key 已存在', status_code=400)
         item.config_key = payload.key.strip()
         item.config_value = payload.value
         item.remark = normalize_text(payload.remark)
@@ -52,7 +52,7 @@ class SystemService:
     async def delete_config(self, session: AsyncSession, config_id: int, current_user: Principal) -> dict:
         item = await session.get(SystemConfig, config_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='配置不存在')
+            raise AppException('配置不存在', status_code=404)
         key = item.config_key
         await session.delete(item)
         await audit_service.log_operation(session, module='system', action='delete_config', path=f'/api/admin/v1/system/configs/{config_id}', user_id=current_user.user_id, detail=key)
@@ -83,7 +83,7 @@ class SystemService:
     async def update_dict(self, session: AsyncSession, dict_id: int, payload: DictUpdate, current_user: Principal) -> dict:
         item = await session.get(SystemDict, dict_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='字典项不存在')
+            raise AppException('字典项不存在', status_code=404)
         item.dict_type = payload.type.strip()
         item.dict_label = payload.label.strip()
         item.dict_value = payload.value.strip()
@@ -95,7 +95,7 @@ class SystemService:
     async def delete_dict(self, session: AsyncSession, dict_id: int, current_user: Principal) -> dict:
         item = await session.get(SystemDict, dict_id)
         if item is None:
-            raise HTTPException(status_code=404, detail='字典项不存在')
+            raise AppException('字典项不存在', status_code=404)
         detail = f'{item.dict_type}:{item.dict_value}'
         await session.delete(item)
         await audit_service.log_operation(session, module='system', action='delete_dict', path=f'/api/admin/v1/system/dicts/{dict_id}', user_id=current_user.user_id, detail=detail)

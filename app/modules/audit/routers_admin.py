@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin_user, get_db, require_permission
+from app.core.exceptions import AppException
 from app.core.response import success
 from app.core.security import Principal
 from app.modules.audit.schemas import ClearOperationLogsRequest
@@ -27,7 +28,7 @@ async def delete_operation_log(
         result = await service.delete_operation_log(session, log_id)
         return success(result)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(str(exc), status_code=404) from exc
 
 
 @router.post('/operation-logs/clear', dependencies=[Depends(require_permission('audit:log:delete'))])
@@ -37,4 +38,3 @@ async def clear_operation_logs(
     session: AsyncSession = Depends(get_db),
 ) -> dict:
     return success(await service.clear_operation_logs(session, payload.module))
-

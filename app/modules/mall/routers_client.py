@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_client_user, get_db
+from app.core.exceptions import AppException
 from app.core.response import success
 from app.core.security import Principal
 from app.modules.mall.schemas import CartAddRequest, OrderCreateRequest
@@ -21,7 +22,7 @@ async def list_products(session: AsyncSession = Depends(get_db)) -> dict:
 async def get_product(product_id: int, session: AsyncSession = Depends(get_db)) -> dict:
     product = await service.get_product(session, product_id)
     if product is None:
-        raise HTTPException(status_code=404, detail='商品不存在')
+        raise AppException('商品不存在', status_code=404)
     return success(product)
 
 
