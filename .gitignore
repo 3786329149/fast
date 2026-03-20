@@ -8,6 +8,15 @@ pytest-cache-files-*/
 .coverage
 htmlcov/
 .env
+.env.local
+.env.dev
+.env.test
+.env.prod
+.env.*
+!.env.example
+!.env.local.example
+!.env.test.example
+!.env.prod.example
 .venv/
 .uv-cache/
 .idea/
