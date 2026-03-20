@@ -70,6 +70,39 @@ app/
 cp .env.example .env
 ```
 
+基础 `.env` 负责公共配置和环境选择：
+
+```env
+APP_ENV=local
+SERVER_HOST=0.0.0.0
+SERVER_PORT=5100
+```
+
+如果需要区分环境，再按目标环境创建覆盖文件：
+
+```env
+.env.local
+.env.test
+.env.prod
+```
+
+加载规则：
+
+- 先加载 `.env`
+- 再根据 `APP_ENV` 叠加 `.env.local` / `.env.test` / `.env.prod`
+- 系统环境变量优先级最高，会覆盖文件中的同名配置
+
+本地联调常见的 `.env.local` 内容可以参考：
+
+```env
+APP_DEBUG=true
+LOG_FORMAT=pretty
+CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:5173
+CORS_ALLOW_METHODS=*
+CORS_ALLOW_HEADERS=*
+CORS_ALLOW_CREDENTIALS=false
+```
+
 ### 2. 安装依赖
 ```bash
 uv sync
@@ -97,8 +130,13 @@ uv run fast dev
 ```
 
 ### 6. 访问文档
-- Swagger UI: `http://127.0.0.1:5100/docs`
+- Swagger UI: `http://127.0.0.1:5100/docs`（默认，端口可通过 `SERVER_PORT` 调整）
 - ReDoc: `http://127.0.0.1:5100/redoc`
+
+### 6.1 跨域说明
+- 项目支持通过 `.env` 和分环境文件配置 CORS。
+- `CORS_ALLOW_ORIGINS` 为空时，不启用跨域。
+- 多个来源用英文逗号分隔，例如：`http://localhost:3000,http://127.0.0.1:5173`
 
 ### 7. Docker 启动
 ```bash

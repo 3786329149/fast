@@ -14,8 +14,6 @@ from app.main import create_app
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEV_HOST = "0.0.0.0"
-DEV_PORT = 5100
 
 app = typer.Typer(
     help="Project development commands",
@@ -37,12 +35,16 @@ def _run(cmd: list[str]) -> None:
         raise SystemExit(130) from exc
 
 
+def _dev_display_host(host: str) -> str:
+    return "127.0.0.1" if host in {"0.0.0.0", "::"} else host
+
+
 def _print_dev_banner() -> None:
     settings = get_settings()
-    base_url = f"http://127.0.0.1:{DEV_PORT}"
+    base_url = f"http://{_dev_display_host(settings.SERVER_HOST)}:{settings.SERVER_PORT}"
     print(f"App: {settings.APP_NAME}")
     print(f"Env: {settings.APP_ENV}")
-    print(f"Bind: {DEV_HOST}:{DEV_PORT}")
+    print(f"Bind: {settings.SERVER_HOST}:{settings.SERVER_PORT}")
     print(f"Docs: {base_url}/docs")
     print(f"ReDoc: {base_url}/redoc")
     print(f"Health: {base_url}/healthz")
@@ -51,6 +53,7 @@ def _print_dev_banner() -> None:
 
 @app.command()
 def dev() -> None:
+    settings = get_settings()
     _print_dev_banner()
     _run(
         [
@@ -60,9 +63,9 @@ def dev() -> None:
             "app.main:app",
             "--reload",
             "--host",
-            DEV_HOST,
+            settings.SERVER_HOST,
             "--port",
-            str(DEV_PORT),
+            str(settings.SERVER_PORT),
             "--no-access-log",
         ]
     )

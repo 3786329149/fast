@@ -221,8 +221,14 @@ def test_cli_dev_routes_to_existing_handler(monkeypatch) -> None:
     def fake_run(cmd: list[str]) -> None:
         calls.append(cmd)
 
+    fake_settings = SimpleNamespace(
+        SERVER_HOST="0.0.0.0",
+        SERVER_PORT=5100,
+    )
+
     monkeypatch.setattr(cli, "_run", fake_run)
     monkeypatch.setattr(cli, "_print_dev_banner", lambda: None)
+    monkeypatch.setattr(cli, "get_settings", lambda: fake_settings)
 
     result = runner.invoke(cli.app, ["dev"])
 
@@ -235,9 +241,9 @@ def test_cli_dev_routes_to_existing_handler(monkeypatch) -> None:
             "app.main:app",
             "--reload",
             "--host",
-            cli.DEV_HOST,
+            fake_settings.SERVER_HOST,
             "--port",
-            str(cli.DEV_PORT),
+            str(fake_settings.SERVER_PORT),
             "--no-access-log",
         ]
     ]

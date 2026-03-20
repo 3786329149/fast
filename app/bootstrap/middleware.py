@@ -5,7 +5,10 @@ import uuid
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.core.config import get_settings
 
 logger = structlog.get_logger("app.http")
 
@@ -54,4 +57,13 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
 
 def register_middlewares(app: FastAPI) -> None:
+    settings = get_settings()
+    if settings.CORS_ENABLED:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.CORS_ORIGINS_LIST,
+            allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+            allow_methods=settings.CORS_METHODS_LIST,
+            allow_headers=settings.CORS_HEADERS_LIST,
+        )
     app.add_middleware(RequestContextMiddleware)
