@@ -9,8 +9,8 @@ from urllib.parse import urlparse
 
 import httpx
 
-from app.core.config import Settings, get_settings
-from app.integrations.wechat.crypto import WeChatCrypto, WeChatCryptoError
+from app.config import RuntimeConfig, get_config
+from app.infra.integrations.wechat.crypto import WeChatCrypto, WeChatCryptoError
 
 
 class WeChatApiError(RuntimeError):
@@ -25,8 +25,8 @@ class WeChatCallbackResult:
 
 
 class WeChatMiniClient:
-    def __init__(self, settings: Settings | None = None) -> None:
-        self.settings = settings or get_settings()
+    def __init__(self, settings: RuntimeConfig | None = None) -> None:
+        self.settings = settings or get_config()
         self._token_cache: dict[str, Any] = {'value': None, 'expires_at': 0}
 
     @property

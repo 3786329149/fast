@@ -38,9 +38,9 @@
 app/
 ├── api/                # 多端路由入口
 ├── bootstrap/          # 启动、日志、中间件、异常处理
-├── core/               # 配置、数据库、Redis、安全、通用响应
-├── db/                 # Alembic 配置与模型聚合
-├── integrations/       # 微信、短信、对象存储、Push 适配层
+├── config/             # 运行时配置与环境变量加载
+├── core/               # 常量、枚举、异常、响应、共享类型
+├── infra/              # 数据库、缓存、安全、第三方集成
 ├── modules/            # 业务模块
 │   ├── iam             # 统一账号、登录、绑定、扫码登录
 │   ├── org             # 公司、部门、员工
@@ -50,11 +50,13 @@ app/
 │   ├── notify          # 消息模板、发送记录
 │   ├── cms             # Banner、公告
 │   ├── file            # 文件、上传凭证
-│   ├── system          # 系统配置、字典
+│   ├── system          # 系统设置、字典
 │   ├── audit           # 操作日志、接口日志
 │   └── stats           # 仪表盘统计
 ├── tasks/              # Celery 任务示例
 └── main.py             # FastAPI 入口
+
+alembic/                # 顶层数据库迁移目录
 ```
 
 补充文档：

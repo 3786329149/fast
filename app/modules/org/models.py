@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import Date, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base, IDMixin, TimestampMixin
+from app.infra.db.base import Base, IDMixin, TimestampMixin
 
 
 class OrgCompany(IDMixin, TimestampMixin, Base):

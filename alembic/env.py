@@ -5,12 +5,12 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from app.core.config import get_settings
-from app.db.base import Base
+from app.config import get_config
+from app.infra.db.registry import Base
 
 config = context.config
-settings = get_settings()
-config.set_main_option('sqlalchemy.url', settings.DATABASE_SYNC_URL)
+runtime_config = get_config()
+config.set_main_option('sqlalchemy.url', runtime_config.DATABASE_SYNC_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name, encoding='utf-8')

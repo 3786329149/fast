@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.cms.models import CmsBanner, CmsNotice
 from app.modules.cms.schemas import BannerCreate, BannerUpdate, NoticeCreate, NoticeUpdate

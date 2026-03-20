@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.core.database import AsyncSessionLocal
-from app.core.security import get_password_hash
+from app.infra.db.session import AsyncSessionLocal
+from app.infra.security.token import get_password_hash
 from app.modules.audit.models import OperationLog
 from app.modules.cms.models import CmsBanner, CmsNotice
 from app.modules.file.models import FileAsset
@@ -28,7 +28,7 @@ from app.modules.rbac.models import (
     AdminRolePermission,
     AdminUserRole,
 )
-from app.modules.system.models import SystemConfig, SystemDict
+from app.modules.system.models import SystemDict, SystemSetting
 
 
 async def get_or_create(session, model, defaults: dict | None = None, **filters):
@@ -147,10 +147,10 @@ async def main() -> None:
             ('file:asset:create', '新建文件', 'file'),
             ('file:asset:update', '编辑文件', 'file'),
             ('file:asset:delete', '删除文件', 'file'),
-            ('system:config:list', '查看配置', 'system'),
-            ('system:config:create', '新建配置', 'system'),
-            ('system:config:update', '编辑配置', 'system'),
-            ('system:config:delete', '删除配置', 'system'),
+            ('system:setting:list', '查看设置', 'system'),
+            ('system:setting:create', '新建设置', 'system'),
+            ('system:setting:update', '编辑设置', 'system'),
+            ('system:setting:delete', '删除设置', 'system'),
             ('system:dict:list', '查看字典', 'system'),
             ('system:dict:create', '新建字典', 'system'),
             ('system:dict:update', '编辑字典', 'system'),
@@ -311,8 +311,8 @@ async def main() -> None:
         await get_or_create(session, CmsNotice, title='系统升级公告', defaults={'content': '本周五凌晨进行系统升级。', 'status': 1, 'pinned': True})
         await get_or_create(session, CmsNotice, title='积分活动', defaults={'content': '下单即送积分。', 'status': 1, 'pinned': False})
 
-        await get_or_create(session, SystemConfig, config_key='mall.order_auto_cancel_minutes', defaults={'config_value': '30', 'remark': '订单自动取消分钟数'})
-        await get_or_create(session, SystemConfig, config_key='upload.max_file_size_mb', defaults={'config_value': '20', 'remark': '单文件上传限制'})
+        await get_or_create(session, SystemSetting, config_key='mall.order_auto_cancel_minutes', defaults={'config_value': '30', 'remark': '订单自动取消分钟数'})
+        await get_or_create(session, SystemSetting, config_key='upload.max_file_size_mb', defaults={'config_value': '20', 'remark': '单文件上传限制'})
         await get_or_create(session, SystemDict, dict_type='order_status', dict_label='待处理', dict_value='pending', defaults={'sort': 10})
         await get_or_create(session, SystemDict, dict_type='order_status', dict_label='已支付', dict_value='paid', defaults={'sort': 20})
 

@@ -6,14 +6,14 @@ from typing import Any
 
 import structlog
 
-from app.core.config import get_settings
+from app.config import get_config
 
 
 def add_service_metadata(_: Any, __: str, event_dict: dict[str, Any]) -> dict[str, Any]:
-    settings = get_settings()
-    event_dict.setdefault("env", settings.APP_ENV)
-    event_dict.setdefault("service", settings.APP_NAME)
-    event_dict.setdefault("version", settings.APP_VERSION)
+    config = get_config()
+    event_dict.setdefault("env", config.APP_ENV)
+    event_dict.setdefault("service", config.APP_NAME)
+    event_dict.setdefault("version", config.APP_VERSION)
     return event_dict
 
 
@@ -33,7 +33,7 @@ def build_renderer(log_format: str) -> Any:
 
 
 def configure_logging() -> None:
-    settings = get_settings()
+    config = get_config()
     shared_processors = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
@@ -42,8 +42,8 @@ def configure_logging() -> None:
         structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", utc=False),
         add_service_metadata,
     ]
-    renderer = build_renderer(settings.RESOLVED_LOG_FORMAT)
-    level = settings.LOG_LEVEL.upper()
+    renderer = build_renderer(config.RESOLVED_LOG_FORMAT)
+    level = config.LOG_LEVEL.upper()
 
     logging.config.dictConfig(
         {

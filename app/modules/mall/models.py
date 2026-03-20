@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base, IDMixin, TimestampMixin
+from app.infra.db.base import Base, IDMixin, TimestampMixin
 
 
 class MallCategory(IDMixin, TimestampMixin, Base):

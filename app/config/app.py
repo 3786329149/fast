@@ -1,9 +1,15 @@
+from enum import StrEnum
+
 from pydantic import BaseModel
 
-from app.core.config.types import Environment
+
+class Environment(StrEnum):
+    LOCAL = "local"
+    TEST = "test"
+    PROD = "prod"
 
 
-class AppSettings(BaseModel):
+class AppConfig(BaseModel):
     APP_NAME: str = "FastAPI Mall Enterprise Starter"
     APP_ENV: Environment = Environment.LOCAL
     APP_DEBUG: bool = True

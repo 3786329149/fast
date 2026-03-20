@@ -8,13 +8,19 @@ from uuid import uuid4
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.config import get_config
 from app.core.constants import QR_LOGIN_TICKET_EXPIRE_SECONDS
 from app.core.enums import TokenScene
 from app.core.exceptions import AppException
-from app.core import redis as redis_store
-from app.core.security import Principal, decode_token, get_password_hash, issue_token_pair, verify_password
-from app.integrations.wechat.client import WeChatApiError, client as wechat_client
+from app.infra.cache import redis as redis_store
+from app.infra.integrations.wechat.client import WeChatApiError, client as wechat_client
+from app.infra.security.token import (
+    Principal,
+    decode_token,
+    get_password_hash,
+    issue_token_pair,
+    verify_password,
+)
 from app.modules.iam.repository import repository
 
 _PENDING_CACHE: dict[str, dict] = {}
@@ -56,7 +62,7 @@ class IAMService:
                     'mall:order:list',
                     'org:department:list',
                     'rbac:role:list',
-                    'system:config:list',
+                    'system:setting:list',
                 ],
             )
         return Principal(
@@ -217,7 +223,7 @@ class IAMService:
             identity_key=account,
         )
 
-        if user is None and password_identity is None and get_settings().APP_ENV == 'local':
+        if user is None and password_identity is None and get_config().IS_LOCAL_ENV:
             username = account
             user = await repository.create_user(session, username=username, mobile=account if account.isdigit() else None)
             await repository.ensure_profile(session, user_id=user.id, nickname=username)

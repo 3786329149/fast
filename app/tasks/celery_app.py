@@ -1,10 +1,10 @@
 from celery import Celery
 
 from app.bootstrap.logging import configure_logging
-from app.core.config import get_settings
+from app.config import get_config
 
 configure_logging()
-settings = get_settings()
-celery_app = Celery('mall_enterprise', broker=settings.REDIS_URL, backend=settings.REDIS_URL)
+config = get_config()
+celery_app = Celery('mall_enterprise', broker=config.REDIS_URL, backend=config.REDIS_URL)
 celery_app.conf.task_default_queue = 'default'
 celery_app.conf.worker_hijack_root_logger = False

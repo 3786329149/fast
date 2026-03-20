@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin_user, get_db, require_permission
 from app.core.response import success
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.cms.schemas import BannerCreate, BannerUpdate, NoticeCreate, NoticeUpdate
 from app.modules.cms.service import service
 
@@ -74,4 +74,3 @@ async def admin_delete_notice(
     session: AsyncSession = Depends(get_db),
 ) -> dict:
     return success(await service.delete_notice(session, notice_id, current_user))
-

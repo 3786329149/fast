@@ -1,9 +1,9 @@
 import os
 from functools import lru_cache
 
-from app.core.config.helpers import BASE_ENV_FILE, read_env_value
-from app.core.config.settings import ProdSettings, Settings, SETTINGS_BY_ENV, TestSettings
-from app.core.config.types import Environment
+from app.config.app import Environment
+from app.config.helpers import BASE_ENV_FILE, read_env_value
+from app.config.schema import CONFIG_BY_ENV, ProdConfig, RuntimeConfig, TestConfig
 
 
 APP_ENV_ALIASES = {
@@ -31,11 +31,11 @@ def resolve_app_env() -> Environment:
 
 
 @lru_cache
-def get_settings() -> Settings:
+def get_config() -> RuntimeConfig:
     env_name = resolve_app_env()
-    settings_cls = SETTINGS_BY_ENV[env_name]
-    settings = settings_cls(APP_ENV=env_name)
-    if isinstance(settings, (TestSettings, ProdSettings)):
-        settings.APP_DEBUG = False
-        settings.LOG_FORMAT = "json"
-    return settings
+    config_cls = CONFIG_BY_ENV[env_name]
+    config = config_cls(APP_ENV=env_name)
+    if isinstance(config, (TestConfig, ProdConfig)):
+        config.APP_DEBUG = False
+        config.LOG_FORMAT = "json"
+    return config

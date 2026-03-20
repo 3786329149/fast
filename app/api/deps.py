@@ -4,10 +4,10 @@ from fastapi import Depends, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db_session
+from app.infra.db.session import get_db_session
 from app.core.enums import TokenScene
 from app.core.exceptions import AppException
-from app.core.security import Principal, decode_token
+from app.infra.security.token import Principal, decode_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
 

@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from app.bootstrap.diagnostics import run_startup_diagnostics
 from app.bootstrap.logging import configure_logging
-from app.core.redis import close_redis
+from app.infra.cache.redis import close_redis
 
 
 @asynccontextmanager

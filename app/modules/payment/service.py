@@ -9,10 +9,10 @@ from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.config import get_config
 from app.core.exceptions import AppException
-from app.core.security import Principal
-from app.integrations.wechat.client import WeChatApiError, client as wechat_client
+from app.infra.integrations.wechat.client import WeChatApiError, client as wechat_client
+from app.infra.security.token import Principal
 from app.modules.iam.repository import repository as iam_repository
 from app.modules.mall.models import MallOrder
 from app.modules.payment.repository import repository
@@ -90,7 +90,7 @@ class PaymentService:
             pay_order_no=pay_order_no,
             channel='wechat_miniapp',
             amount=amount,
-            currency=get_settings().WECHAT_PAY_CURRENCY,
+            currency=get_config().WECHAT_PAY_CURRENCY,
             description=description or f'订单 {order_no}',
             payer_openid=payer_openid,
         )
@@ -112,8 +112,8 @@ class PaymentService:
         await repository.update_payment_prepare(
             session,
             payment_order=payment_order,
-            appid=get_settings().WECHAT_MINIAPP_APPID,
-            mch_id=get_settings().WECHAT_MCH_ID,
+            appid=get_config().WECHAT_MINIAPP_APPID,
+            mch_id=get_config().WECHAT_MCH_ID,
             prepay_id=response_payload.get('prepay_id'),
             response_payload=response_payload,
         )
@@ -198,7 +198,7 @@ class PaymentService:
                 openid = extra.get('openid')
                 if openid:
                     return openid
-        if get_settings().WECHAT_API_MOCK:
+        if get_config().WECHAT_API_MOCK:
             return f'mini_user_{user_id}'
         return None
 

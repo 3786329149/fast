@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.main import create_app
+from app.bootstrap.app import create_app
 
 
 async def _fake_startup_diagnostics(app, **_: object) -> dict:

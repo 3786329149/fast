@@ -1,4 +1,4 @@
-from app.core.database import Base
+from app.infra.db.base import Base
 from app.modules.audit.models import ApiAccessLog, OperationLog
 from app.modules.cms.models import CmsBanner, CmsNotice
 from app.modules.file.models import FileAsset
@@ -15,7 +15,7 @@ from app.modules.rbac.models import (
     AdminRolePermission,
     AdminUserRole,
 )
-from app.modules.system.models import SystemConfig, SystemDict
+from app.modules.system.models import SystemDict, SystemSetting
 
 __all__ = [
     'Base',
@@ -48,6 +48,6 @@ __all__ = [
     'AdminRoleMenu',
     'AdminRolePermission',
     'AdminUserRole',
-    'SystemConfig',
+    'SystemSetting',
     'SystemDict',
 ]

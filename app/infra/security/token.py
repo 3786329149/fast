@@ -7,7 +7,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 
-from app.core.config import get_settings
+from app.config import get_config
 from app.core.constants import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
 from app.core.enums import TokenScene
 
@@ -53,10 +53,10 @@ def get_password_hash(password: str) -> str:
 
 
 def _encode_token(payload: dict, expires_minutes: int) -> str:
-    settings = get_settings()
+    config = get_config()
     expire_at = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     payload.update({'exp': int(expire_at.timestamp())})
-    return jwt.encode(payload, settings.APP_SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(payload, config.APP_SECRET_KEY, algorithm=ALGORITHM)
 
 
 def create_access_token(principal: Principal) -> str:
@@ -81,9 +81,9 @@ def issue_token_pair(principal: Principal) -> TokenPair:
 
 
 def decode_token(token: str) -> TokenPayload:
-    settings = get_settings()
+    config = get_config()
     try:
-        data = jwt.decode(token, settings.APP_SECRET_KEY, algorithms=[ALGORITHM])
+        data = jwt.decode(token, config.APP_SECRET_KEY, algorithms=[ALGORITHM])
         return TokenPayload(**data)
     except JWTError as exc:
         raise ValueError('invalid token') from exc

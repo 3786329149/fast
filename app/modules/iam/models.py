@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base, IDMixin, SoftDeleteMixin, TimestampMixin
+from app.infra.db.base import Base, IDMixin, SoftDeleteMixin, TimestampMixin
 
 
 class User(IDMixin, TimestampMixin, SoftDeleteMixin, Base):

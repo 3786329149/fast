@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic_settings import SettingsConfigDict
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASE_ENV_FILE = PROJECT_ROOT / ".env"
 
 
@@ -19,7 +19,7 @@ def env_file_chain(env_name: str) -> tuple[str, ...]:
     return (str(BASE_ENV_FILE), str(PROJECT_ROOT / env_file_name(env_name)))
 
 
-def settings_config_for(env_name: str) -> SettingsConfigDict:
+def config_dict_for(env_name: str) -> SettingsConfigDict:
     return SettingsConfigDict(
         env_file=env_file_chain(env_name),
         env_file_encoding="utf-8",

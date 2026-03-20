@@ -3,21 +3,21 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
-class ConfigBase(BaseModel):
+class SettingBase(BaseModel):
     key: str = Field(min_length=1, max_length=128)
     value: str = ''
     remark: str | None = None
 
 
-class ConfigCreate(ConfigBase):
+class SettingCreate(SettingBase):
     pass
 
 
-class ConfigUpdate(ConfigBase):
+class SettingUpdate(SettingBase):
     pass
 
 
-class ConfigOut(ConfigBase):
+class SettingOut(SettingBase):
     id: int
 
 

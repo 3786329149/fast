@@ -9,16 +9,17 @@ from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 
-from app.core import redis as redis_store
-from app.core.config import get_settings
-from app.core.database import AsyncSessionLocal, Base
-from app.core.redis import close_redis, init_redis
+from app.config import get_config
+from app.infra.cache import redis as redis_store
+from app.infra.cache.redis import close_redis, init_redis
+from app.infra.db.base import Base
+from app.infra.db.session import AsyncSessionLocal
 
 logger = structlog.get_logger(__name__)
 
 
 def ensure_models_registered() -> None:
-    importlib.import_module("app.db.base")
+    importlib.import_module("app.infra.db.registry")
 
 
 def collect_table_summary(*, include_names: bool) -> dict[str, Any]:
@@ -49,8 +50,8 @@ def collect_route_summary(app: FastAPI) -> dict[str, Any]:
 
 
 async def probe_database() -> dict[str, Any]:
-    settings = get_settings()
-    url = make_url(settings.DATABASE_URL)
+    config = get_config()
+    url = make_url(config.DATABASE_URL)
     started_at = time.perf_counter()
 
     async with AsyncSessionLocal() as session:
@@ -70,7 +71,7 @@ async def probe_database() -> dict[str, Any]:
 
 
 async def probe_redis(*, keep_client: bool) -> dict[str, Any]:
-    settings = get_settings()
+    config = get_config()
     started_at = time.perf_counter()
 
     await init_redis()
@@ -83,9 +84,9 @@ async def probe_redis(*, keep_client: bool) -> dict[str, Any]:
         return {
             "connected": True,
             "latency_ms": latency_ms,
-            "host": settings.REDIS_HOST,
-            "port": settings.REDIS_PORT,
-            "db": settings.REDIS_DB,
+            "host": config.REDIS_HOST,
+            "port": config.REDIS_PORT,
+            "db": config.REDIS_DB,
         }
     except Exception:
         await close_redis()
@@ -123,8 +124,8 @@ async def run_startup_diagnostics(
     include_details: bool | None = None,
     keep_redis_client: bool = True,
 ) -> dict[str, Any]:
-    settings = get_settings()
-    include_details = settings.IS_LOCAL_ENV if include_details is None else include_details
+    config = get_config()
+    include_details = config.IS_LOCAL_ENV if include_details is None else include_details
 
     ensure_models_registered()
 
@@ -154,7 +155,7 @@ async def run_startup_diagnostics(
     app.state.startup_diagnostics = diagnostics
 
     summary_log: dict[str, Any] = {
-        "env": settings.APP_ENV,
+        "env": config.APP_ENV,
         "table_count": tables["count"],
         "route_count": routes["count"],
         "route_domains": routes["domains"],

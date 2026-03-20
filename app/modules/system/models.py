@@ -3,10 +3,10 @@ from __future__ import annotations
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base, IDMixin, TimestampMixin
+from app.infra.db.base import Base, IDMixin, TimestampMixin
 
 
-class SystemConfig(IDMixin, TimestampMixin, Base):
+class SystemSetting(IDMixin, TimestampMixin, Base):
     __tablename__ = 'system_config'
 
     config_key: Mapped[str] = mapped_column(String(128), unique=True)

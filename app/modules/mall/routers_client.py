@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_client_user, get_db
 from app.core.exceptions import AppException
 from app.core.response import success
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.mall.schemas import CartAddRequest, OrderCreateRequest
 from app.modules.mall.service import service
 

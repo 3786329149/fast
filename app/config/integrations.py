@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class WechatSettings(BaseModel):
+class WechatConfig(BaseModel):
     WECHAT_API_MOCK: bool = True
     WECHAT_API_BASE_URL: str = "https://api.weixin.qq.com"
     WECHAT_PAY_API_BASE_URL: str = "https://api.mch.weixin.qq.com"
@@ -30,7 +30,7 @@ class WechatSettings(BaseModel):
         )
 
 
-class ProviderSettings(BaseModel):
+class ProviderConfig(BaseModel):
     SMS_PROVIDER: str = "mock"
     STORAGE_PROVIDER: str = "mock"
     PUSH_PROVIDER: str = "mock"

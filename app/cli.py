@@ -7,10 +7,10 @@ from pathlib import Path
 
 import typer
 
+from app.bootstrap.app import create_app
 from app.bootstrap.diagnostics import run_startup_diagnostics
 from app.bootstrap.logging import configure_logging
-from app.core.config import get_settings
-from app.main import create_app
+from app.config import get_config
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,11 +40,11 @@ def _dev_display_host(host: str) -> str:
 
 
 def _print_dev_banner() -> None:
-    settings = get_settings()
-    base_url = f"http://{_dev_display_host(settings.SERVER_HOST)}:{settings.SERVER_PORT}"
-    print(f"App: {settings.APP_NAME}")
-    print(f"Env: {settings.APP_ENV}")
-    print(f"Bind: {settings.SERVER_HOST}:{settings.SERVER_PORT}")
+    config = get_config()
+    base_url = f"http://{_dev_display_host(config.SERVER_HOST)}:{config.SERVER_PORT}"
+    print(f"App: {config.APP_NAME}")
+    print(f"Env: {config.APP_ENV}")
+    print(f"Bind: {config.SERVER_HOST}:{config.SERVER_PORT}")
     print(f"Docs: {base_url}/docs")
     print(f"ReDoc: {base_url}/redoc")
     print(f"Health: {base_url}/healthz")
@@ -53,7 +53,7 @@ def _print_dev_banner() -> None:
 
 @app.command()
 def dev() -> None:
-    settings = get_settings()
+    config = get_config()
     _print_dev_banner()
     _run(
         [
@@ -63,9 +63,9 @@ def dev() -> None:
             "app.main:app",
             "--reload",
             "--host",
-            settings.SERVER_HOST,
+            config.SERVER_HOST,
             "--port",
-            str(settings.SERVER_PORT),
+            str(config.SERVER_PORT),
             "--no-access-log",
         ]
     )

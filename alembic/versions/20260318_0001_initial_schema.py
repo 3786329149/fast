@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from alembic import op
 
-from app.db.base import Base
+from app.infra.db.registry import Base
 
 # revision identifiers, used by Alembic.
 revision = '20260318_0001'

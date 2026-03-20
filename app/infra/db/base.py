@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import AsyncIterator
 
-from sqlalchemy import DateTime, MetaData, func, text
-from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import DateTime, MetaData, func
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from app.core.config import get_settings
 
 naming_convention = {
     "ix": "ix_%(column_0_label)s",
@@ -37,28 +34,3 @@ class SoftDeleteMixin:
 
 class IDMixin:
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-
-
-def build_engine() -> AsyncEngine:
-    settings = get_settings()
-    return create_async_engine(
-        settings.DATABASE_URL,
-        echo=settings.SQL_ECHO,
-        future=True,
-        pool_pre_ping=True,
-    )
-
-
-engine: AsyncEngine = build_engine()
-AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
-
-
-async def get_db_session() -> AsyncIterator[AsyncSession]:
-    async with AsyncSessionLocal() as session:
-        yield session
-
-
-async def ping_database() -> bool:
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(text('SELECT 1'))
-        return result.scalar_one() == 1

@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
-from app.core.config.helpers import split_csv
+from app.config.helpers import split_csv
 
 
-class ServerSettings(BaseModel):
+class ServerConfig(BaseModel):
     SERVER_HOST: str = "0.0.0.0"
     SERVER_PORT: int = 5100
 

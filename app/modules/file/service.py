@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.file.models import FileAsset
 from app.modules.file.schemas import FileAssetCreate, FileAssetUpdate

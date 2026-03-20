@@ -4,19 +4,19 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.audit.service import service as audit_service
-from app.modules.system.models import SystemConfig, SystemDict
-from app.modules.system.schemas import ConfigCreate, ConfigUpdate, DictCreate, DictUpdate
+from app.modules.system.models import SystemDict, SystemSetting
+from app.modules.system.schemas import DictCreate, DictUpdate, SettingCreate, SettingUpdate
 from app.utils.crud import normalize_text
 
 
 class SystemService:
-    async def list_configs(self, session: AsyncSession) -> list[dict]:
-        rows = list((await session.scalars(select(SystemConfig).order_by(SystemConfig.id.asc()))).all())
-        return [self.serialize_config(item) for item in rows]
+    async def list_settings(self, session: AsyncSession) -> list[dict]:
+        rows = list((await session.scalars(select(SystemSetting).order_by(SystemSetting.id.asc()))).all())
+        return [self.serialize_setting(item) for item in rows]
 
-    def serialize_config(self, item: SystemConfig) -> dict:
+    def serialize_setting(self, item: SystemSetting) -> dict:
         return {
             'id': item.id,
             'key': item.config_key,
@@ -24,40 +24,40 @@ class SystemService:
             'remark': item.remark,
         }
 
-    async def create_config(self, session: AsyncSession, payload: ConfigCreate, current_user: Principal) -> dict:
-        exists = await session.scalar(select(SystemConfig).where(SystemConfig.config_key == payload.key.strip()))
+    async def create_setting(self, session: AsyncSession, payload: SettingCreate, current_user: Principal) -> dict:
+        exists = await session.scalar(select(SystemSetting).where(SystemSetting.config_key == payload.key.strip()))
         if exists is not None:
-            raise AppException('配置 Key 已存在', status_code=400)
-        item = SystemConfig(config_key=payload.key.strip(), config_value=payload.value, remark=normalize_text(payload.remark))
+            raise AppException('设置 Key 已存在', status_code=400)
+        item = SystemSetting(config_key=payload.key.strip(), config_value=payload.value, remark=normalize_text(payload.remark))
         session.add(item)
         await session.flush()
-        await audit_service.log_operation(session, module='system', action='create_config', path='/api/admin/v1/system/configs', user_id=current_user.user_id, detail=item.config_key)
+        await audit_service.log_operation(session, module='system', action='create_setting', path='/api/admin/v1/system/settings', user_id=current_user.user_id, detail=item.config_key)
         await session.commit()
-        return self.serialize_config(item)
+        return self.serialize_setting(item)
 
-    async def update_config(self, session: AsyncSession, config_id: int, payload: ConfigUpdate, current_user: Principal) -> dict:
-        item = await session.get(SystemConfig, config_id)
+    async def update_setting(self, session: AsyncSession, setting_id: int, payload: SettingUpdate, current_user: Principal) -> dict:
+        item = await session.get(SystemSetting, setting_id)
         if item is None:
-            raise AppException('配置不存在', status_code=404)
-        exists = await session.scalar(select(SystemConfig).where(SystemConfig.config_key == payload.key.strip(), SystemConfig.id != config_id))
+            raise AppException('设置不存在', status_code=404)
+        exists = await session.scalar(select(SystemSetting).where(SystemSetting.config_key == payload.key.strip(), SystemSetting.id != setting_id))
         if exists is not None:
-            raise AppException('配置 Key 已存在', status_code=400)
+            raise AppException('设置 Key 已存在', status_code=400)
         item.config_key = payload.key.strip()
         item.config_value = payload.value
         item.remark = normalize_text(payload.remark)
-        await audit_service.log_operation(session, module='system', action='update_config', path=f'/api/admin/v1/system/configs/{config_id}', user_id=current_user.user_id, detail=item.config_key)
+        await audit_service.log_operation(session, module='system', action='update_setting', path=f'/api/admin/v1/system/settings/{setting_id}', user_id=current_user.user_id, detail=item.config_key)
         await session.commit()
-        return self.serialize_config(item)
+        return self.serialize_setting(item)
 
-    async def delete_config(self, session: AsyncSession, config_id: int, current_user: Principal) -> dict:
-        item = await session.get(SystemConfig, config_id)
+    async def delete_setting(self, session: AsyncSession, setting_id: int, current_user: Principal) -> dict:
+        item = await session.get(SystemSetting, setting_id)
         if item is None:
-            raise AppException('配置不存在', status_code=404)
+            raise AppException('设置不存在', status_code=404)
         key = item.config_key
         await session.delete(item)
-        await audit_service.log_operation(session, module='system', action='delete_config', path=f'/api/admin/v1/system/configs/{config_id}', user_id=current_user.user_id, detail=key)
+        await audit_service.log_operation(session, module='system', action='delete_setting', path=f'/api/admin/v1/system/settings/{setting_id}', user_id=current_user.user_id, detail=key)
         await session.commit()
-        return {'id': config_id}
+        return {'id': setting_id}
 
     async def list_dicts(self, session: AsyncSession) -> list[dict]:
         rows = list((await session.scalars(select(SystemDict).order_by(SystemDict.dict_type.asc(), SystemDict.sort.asc(), SystemDict.id.asc()))).all())

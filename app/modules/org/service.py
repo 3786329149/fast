@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.org.models import EmployeeProfile, OrgCompany, OrgDepartment
 from app.modules.org.schemas import DepartmentCreate, DepartmentUpdate, EmployeeCreate, EmployeeUpdate

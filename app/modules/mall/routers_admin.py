@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin_user, get_db, require_permission
 from app.core.response import success
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.mall.schemas import OrderAdminCreate, OrderAdminUpdate, ProductCreate, ProductUpdate
 from app.modules.mall.service import service
 

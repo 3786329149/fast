@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_client_user, get_db
 from app.core.response import success
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.payment.schemas import CreatePaymentRequest
 from app.modules.payment.service import service
 

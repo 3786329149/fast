@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from app.core.config import loader
-from app.core.config.settings import ProdSettings
-from app.core.config.types import Environment
+from app.config import loader
+from app.config.app import Environment
+from app.config.schema import ProdConfig
 
 
 def test_resolve_app_env_prefers_process_env(monkeypatch) -> None:
@@ -26,15 +26,15 @@ def test_normalize_app_env_rejects_unknown_value() -> None:
         loader.normalize_app_env("staging")
 
 
-def test_get_settings_selects_prod_settings(monkeypatch) -> None:
-    loader.get_settings.cache_clear()
+def test_get_config_selects_prod_config(monkeypatch) -> None:
+    loader.get_config.cache_clear()
     monkeypatch.setattr(loader, "resolve_app_env", lambda: Environment.PROD)
 
-    settings = loader.get_settings()
+    config = loader.get_config()
 
-    assert isinstance(settings, ProdSettings)
-    assert settings.APP_ENV == Environment.PROD
-    assert settings.APP_DEBUG is False
-    assert settings.RESOLVED_LOG_FORMAT == "json"
+    assert isinstance(config, ProdConfig)
+    assert config.APP_ENV == Environment.PROD
+    assert config.APP_DEBUG is False
+    assert config.RESOLVED_LOG_FORMAT == "json"
 
-    loader.get_settings.cache_clear()
+    loader.get_config.cache_clear()

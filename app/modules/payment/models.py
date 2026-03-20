@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base, IDMixin, TimestampMixin
+from app.infra.db.base import Base, IDMixin, TimestampMixin
 
 
 class PaymentOrder(IDMixin, TimestampMixin, Base):

@@ -6,14 +6,14 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.config import get_config
 from app.modules.iam.models import User
 from app.modules.mall.models import MallOrder
 
 
 class StatsService:
     async def dashboard(self, session: AsyncSession) -> dict:
-        tz = ZoneInfo(get_settings().APP_TIMEZONE or 'Asia/Shanghai')
+        tz = ZoneInfo(get_config().APP_TIMEZONE or 'Asia/Shanghai')
         start_of_day = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
         today_order_count = int(
             (await session.scalar(select(func.count(MallOrder.id)).where(MallOrder.created_at >= start_of_day))) or 0

@@ -7,7 +7,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
-from app.core.security import Principal
+from app.infra.security.token import Principal
 from app.modules.audit.service import service as audit_service
 from app.modules.mall.models import MallCart, MallCategory, MallOrder, MallOrderItem, MallSku, MallSpu
 from app.modules.mall.schemas import CartAddRequest, OrderAdminCreate, OrderAdminUpdate, OrderCreateRequest, ProductCreate, ProductUpdate
