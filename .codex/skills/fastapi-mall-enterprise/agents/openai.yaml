@@ -1,0 +1,7 @@
+interface:
+  display_name: "FastAPI 商城后端助手"
+  short_description: "在当前商城与企业后台骨架中开发、调试与排障"
+  default_prompt: "使用 $fastapi-mall-enterprise 在这个 FastAPI 商城与企业后台项目中完成开发、调试或结构梳理。"
+
+policy:
+  allow_implicit_invocation: true
