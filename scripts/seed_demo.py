@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import print
 import sys
 from decimal import Decimal
 from pathlib import Path

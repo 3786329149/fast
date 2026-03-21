@@ -453,6 +453,7 @@ dependencies = [
     { name = "httpx" },
     { name = "orjson" },
     { name = "passlib", extra = ["bcrypt"] },
+    { name = "print" },
     { name = "psycopg2-binary" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -486,6 +487,7 @@ requires-dist = [
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13,<6.0" },
     { name = "orjson", specifier = ">=3.10,<4.0" },
     { name = "passlib", extras = ["bcrypt"], specifier = ">=1.7,<2.0" },
+    { name = "print", specifier = ">=1.3.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pydantic", specifier = ">=2.7,<3.0" },
     { name = "pydantic-settings", specifier = ">=2.2,<3.0" },
@@ -861,6 +863,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
 ]
+
+[[package]]
+name = "print"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/5b/4e6e7aebbf8eb1d7552ae976ab0c54cb67bc741ae30d3efb7c7e4325812b/print-1.3.0.tar.gz", hash = "sha256:ce5fde3929c682a37e51fd458d6b51920dae048516dfe9dddc11a778b98f9b00", size = 619, upload-time = "2016-03-09T12:30:19.194Z" }
 
 [[package]]
 name = "prompt-toolkit"
